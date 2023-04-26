@@ -1,12 +1,12 @@
 import { type NextPage } from "next";
 import Head from "next/head";
+import Image from 'next/image';
 import { SignInButton, useUser } from '@clerk/nextjs';
-
-import { type RouterOutputs, api } from "~/utils/api";
-
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Image from 'next/image';
+
+import { type RouterOutputs, api } from "~/utils/api";
+import { LoadingPage } from '~/components/loading';
 
 dayjs.extend(relativeTime);
 
@@ -53,12 +53,29 @@ const PostView = (props: PostWithUser) => {
   )
 }
 
+const Feed = () => {
+  const { data, isLoading: postLoading } = api.post.getAll.useQuery();
+
+  if (postLoading) return (<LoadingPage />);
+
+  return (
+    <div className='flex flex-col'>
+      {!data
+        ? <div>No posts</div>
+        : data.map((fullPost) => (
+          <PostView key={fullPost.post.id} {...fullPost} />
+        ))}
+    </div>
+  )
+}
+
 const Home: NextPage = () => {
-  const user = useUser();
+  const { isSignedIn, isLoaded: userLoaded } = useUser();
 
-  const { data, isLoading } = api.post.getAll.useQuery();
+  // Start fetching asap
+  api.post.getAll.useQuery();
 
-  if (isLoading) return (<div>Loading...</div>);
+  if (!userLoaded) return (<div />);
 
   return (
     <>
@@ -69,21 +86,15 @@ const Home: NextPage = () => {
       </Head>
       <main className="flex justify-center h-screen">
         <div className='h-full w-full md:max-w-2xl border-x border-slate-400'>
-
           <div className='border-b border-slate-400 flex p-4'>
-            {!user.isSignedIn ? (
+            {!isSignedIn ? (
               <div className='flex justify-center'><SignInButton /></div>) : (
               <CreatePostWizard />
               // <div className='flex justify-center'><SignOutButton /></div>
             )}
           </div>
-          <div className='flex flex-col'>
-            {!data
-              ? <div>No posts</div>
-              : data.map((fullPost) => (
-                <PostView key={fullPost.post.id} {...fullPost} />
-              ))}
-          </div>
+
+          <Feed />
         </div>
       </main>
     </>
