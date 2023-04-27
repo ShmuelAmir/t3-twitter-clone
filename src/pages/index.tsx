@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { type NextPage } from "next";
 import Head from "next/head";
 import Image from 'next/image';
@@ -12,6 +13,9 @@ dayjs.extend(relativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
+  const [input, setInput] = useState('');
+
+  const { mutate } = api.post.create.useMutation();
 
   if (!user) return null;
 
@@ -24,7 +28,17 @@ const CreatePostWizard = () => {
         width={56}
         height={56}
       />
-      <input type="text" placeholder='Type some emojies!' className='bg-transparent grow outline-none' />
+      <input
+        type="text"
+        placeholder='Type some emojies!'
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        className='bg-transparent grow outline-none'
+      />
+      <button onClick={() => {
+        mutate({ content: input });
+        setInput('');
+      }}>Post</button>
     </div>
   );
 }
@@ -47,7 +61,7 @@ const PostView = (props: PostWithUser) => {
           <span>{`@${author.username}`}</span>
           <span className='font-thin'>{`${String.fromCharCode(183)} ${dayjs(post.createdAt).fromNow()}`}</span>
         </div>
-        <span>{post.content}</span>
+        <span className='text-2xl'>{post.content}</span>
       </div>
     </div>
   )
